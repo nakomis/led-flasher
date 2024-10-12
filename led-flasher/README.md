@@ -1,29 +1,36 @@
-brew install mosquitto
+## Setup
+
+`brew install mosquitto`
 
 Binary is at:
-/usr/local/sbin/mosquitto 
+`/usr/local/sbin/mosquitto`
 
 Config is at:
-/usr/local/etc/mosquitto/mosquitto.conf
+`/usr/local/etc/mosquitto/mosquitto.conf`
 
 Create the password file:
+```
 export LOCAL_MQTT_PASSWORD=XXXXXX
-mosquitto_passwd -c -b ~/repos/nakomis/led-flasher/led-flasher/ignored/mqtt_pass nakomis $LOCAL_MQTT_PASSWORD
+mosquitto_passwd -c -b /usr/local/etc/mosquitto/led-flasher-mqtt_pass nakomis $LOCAL_MQTT_PASSWORD
+chown $(whoami):staff /usr/local/etc/mosquitto/led-flasher-mqtt_pass 
+chmod 600 /usr/local/etc/mosquitto/led-flasher-mqtt_pass
+chown $(whoami):staff /usr/local/etc/mosquitto/mosquitto.conf
+chmod 600 /usr/local/etc/mosquitto/mosquitto.conf
+```
 
+## Use
 Run the server:
-/usr/local/sbin/mosquitto -c /usr/local/etc/mosquitto/mosquitto.conf -v
+`/usr/local/sbin/mosquitto -c /usr/local/etc/mosquitto/mosquitto.conf -v`
 
 Subscribe with CLI:
-mosquitto_sub -h $(hostname) -p 1883 -u nakomis -P $LOCAL_MQTT_PASSWORD -t esp32/sub
+`mosquitto_sub -h $(hostname) -p 1883 -u nakomis -P $LOCAL_MQTT_PASSWORD -t esp32/sub`
 
 And publish:
-mosquitto_pub -h $(hostname) -p 1883  -t esp32/sub -m "Foo, Bar"
+`mosquitto_pub -h $(hostname) -p 1883 -u nakomis -P $LOCAL_MQTT_PASSWORD -t esp32/sub -m "Foo, Bar"`
 
 
+## mosquitto.conf
 
-
-####
-Contents of mosquitto.conf:
 ```
 # Config file for mosquitto
 #
@@ -260,9 +267,11 @@ Contents of mosquitto.conf:
 # listener port-number [ip address/host name/unix socket path]
 listener 1883 0.0.0.0
 protocol mqtt
+#password_file /usr/local/etc/mosquitto/led-flasher-mqtt_pass
 
 listener 8883 0.0.0.0
 protocol websockets
+password_file /usr/local/etc/mosquitto/led-flasher-mqtt_pass
 
 
 # By default, a listener will attempt to listen on all supported IP protocol
@@ -561,7 +570,7 @@ protocol mqtt
 # Defaults to false, unless there are no listeners defined in the configuration
 # file, in which case it is set to true, but connections are only allowed from
 # the local machine.
-allow_anonymous true
+allow_anonymous false
 
 # -----------------------------------------------------------------
 # Default authentication and topic access control
@@ -579,7 +588,9 @@ allow_anonymous true
 # See the TLS client require_certificate and use_identity_as_username options
 # for alternative authentication options. If a plugin is used as well as
 # password_file, the plugin check will be made first.
-#password_file
+# password_file /usr/local/etc/mosquitto/mosquitto.conf
+# 
+# MH ^^ is now set along with the listener
 
 # Access may also be controlled using a pre-shared-key file. This requires
 # TLS-PSK support and a listener configured to use it. The file should be text
@@ -934,4 +945,5 @@ allow_anonymous true
 # given multiple times, all of the files from the first instance will be
 # processed before the next instance. See the man page for examples.
 #include_dir
+
 ```
