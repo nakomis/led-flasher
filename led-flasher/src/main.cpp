@@ -37,27 +37,19 @@ int colourToLed(String colour) {
     }
 }
 
-void on(std::vector<String> leds) {
+void setPin(std::vector<String> leds, uint8_t value) {
     for (int i = 0; i < leds.size(); i++) {
         int led = colourToLed(leds[i]);
         Serial.println("ON " + leds[i] + " on pin " + String(led));
-        digitalWrite(led, LOW);
-    }
-}
-
-void off(std::vector<String> leds) {
-    for (int i = 0; i < leds.size(); i++) {
-        int led = colourToLed(leds[i]);
-        Serial.println("OFF " + leds[i] + " on pin " + String(led));
-        digitalWrite(led, HIGH);
+        digitalWrite(led, led == LED_BUILTIN ? !value : value); // LED_BUILTIN is reversed for some reason...
     }
 }
 
 void flash(std::vector<String> leds) {
     for (int count = 0; count < FLASH_COUNT; count++) {
-        on(leds);
+        setPin(leds, HIGH);
         delay(FLASH_DURATION);
-        off(leds);
+        setPin(leds, LOW);
         delay(FLASH_DURATION);
     }
 }
@@ -87,7 +79,7 @@ void messageHandler(String& topic, String& payload) {
     String led = words[1];
     std::vector<String> leds;
     if (led == "ALL") {
-        leds = {"RED", "GREED", "BLUE"};
+        leds = {"RED", "GREEN", "BLUE"};
     } else {
         leds = {led};
     }
@@ -97,11 +89,11 @@ void messageHandler(String& topic, String& payload) {
     }
 
     if (action == "ON") {
-        on(leds);
+        setPin(leds, HIGH);
     }
 
     if (action == "OFF") {
-        off(leds);
+        setPin(leds, LOW);
     }
 
     Serial.println("Outputting words...: ");
@@ -174,8 +166,12 @@ void setup() {
     Serial.println("======================");
     Serial.println("=== Starting Setup ===");
     Serial.println("======================\n");
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
+    const std::vector<int> pins = {LED_BUILTIN, LED_RED, LED_GREEN, LED_BLUE};
+    for (int i = 0; i < pins.size(); i++) {
+        int pin = pins[i];
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, pin == LED_BUILTIN ? HIGH : LOW);
+    }
     connectAWS();
     Serial.println("======================");
     Serial.println("=== Setup Complete ===");
@@ -183,7 +179,6 @@ void setup() {
 }
 
 void loop() {
-    // publishMessage();
     client.loop();
     delay(1000);
 }
