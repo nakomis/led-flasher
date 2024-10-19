@@ -2,3 +2,5 @@
 ignored
 .idea
 .DS_Store
+lambda/dist
+lambda/lambda.zip
