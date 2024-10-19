@@ -158,6 +158,8 @@ void publishMessage() {
     client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 }
 
+// For main() see https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/main.cpp
+
 void setup() {
     Serial.begin(9600);
     // Wait for the serial port to become available
