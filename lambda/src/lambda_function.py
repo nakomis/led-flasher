@@ -8,13 +8,14 @@ import logging
 import gettext
 import json
 import os
+import boto3
+from enum import Enum
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler, AbstractRequestInterceptor, AbstractExceptionHandler)
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.handler_input import HandlerInput
-
 from ask_sdk_model import Response
 from alexa import data
 
@@ -23,6 +24,24 @@ if os.environ.get('LOG_LEVEL'):
     logger.setLevel(logging.getLevelName(os.environ.get('LOG_LEVEL')))
 else:
     logger.setLevel(logging.INFO)
+
+FLASH = "FLASH"
+ON = "ON"
+OFF = "OFF"
+
+
+class Leds(str, Enum):
+    RED = "RED"
+    GREEN = "GREEN"
+    BLUE = "BLUE"
+    ALL = "ALL"
+    NOTFOUND = "NOTFOUND"
+    @staticmethod
+    def fromString(label):
+        label = label.upper()
+        if label in iter(Leds):
+            return Leds[label].value
+        return Leds.ALL.value
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
@@ -74,6 +93,7 @@ class TestIntentHandler(AbstractRequestHandler):
             .response
         )
 
+
 class OnIntentHandler(AbstractRequestHandler):
     """Handler for On Intent."""
 
@@ -90,16 +110,22 @@ class OnIntentHandler(AbstractRequestHandler):
         slot_values = ask_utils.get_slot_value_v2(handler_input, "colour")
         colour = slot_values.value
         logger.info(("Switching on {}").format(colour))
+        led = Leds.fromString(colour)
         _ = handler_input.attributes_manager.request_attributes["_"]
-        speak_output = _(data.ON_MSG).format(colour)
+        if led == Leds.NOTFOUND.value:
+            speak_output = _(data.UNKNOWN_COLOUR_MESSAGE.format(colour))
+        else:
+            speak_output = _(data.ON_MSG).format(colour)
+            postMessage(ON, led)
 
         return (
             handler_input.response_builder
             .speak(speak_output)
             # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask("Next")
+            .ask(speak_output)
             .response
         )
+
 
 class OffIntentHandler(AbstractRequestHandler):
     """Handler for On Intent."""
@@ -119,16 +145,22 @@ class OffIntentHandler(AbstractRequestHandler):
         colour = slot_values.value
         logger.info(("Switching off {}").format(colour))
 
+        led = Leds.fromString(colour)
         _ = handler_input.attributes_manager.request_attributes["_"]
-        speak_output = _(data.OFF_MSG).format(colour)
+        if led == Leds.NOTFOUND.value:
+            speak_output = _(data.UNKNOWN_COLOUR_MESSAGE.format(colour))
+        else:
+            speak_output = _(data.OFF_MSG).format(colour)
+            postMessage(OFF, led)
 
         return (
             handler_input.response_builder
             .speak(speak_output)
             # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask("Next")
+            .ask(speak_output)
             .response
         )
+
 
 class FlashIntentHandler(AbstractRequestHandler):
     """Handler for Flash Intent."""
@@ -145,19 +177,24 @@ class FlashIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         logger.debug("In FlashIntentHandler")
         # logger.info(handler_input)
-        slot_values =ask_utils.get_slot_value_v2(handler_input, "colour")
+        slot_values = ask_utils.get_slot_value_v2(handler_input, "colour")
         colour = slot_values.value
         logger.info(("Flashing {}").format(colour))
         logger.debug(colour)
 
+        led = Leds.fromString(colour)
         _ = handler_input.attributes_manager.request_attributes["_"]
-        speak_output = _(data.FLASH_MSG).format(colour)
+        if led == Leds.NOTFOUND.value:
+            speak_output = _(data.UNKNOWN_COLOUR_MESSAGE.format(colour))
+        else:
+            speak_output = _(data.FLASH_MSG).format(colour)
+            postMessage(FLASH, led)
 
         return (
             handler_input.response_builder
             .speak(speak_output)
             # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask("Next")
+            .ask(speak_output)
             .response
         )
 
@@ -205,8 +242,10 @@ class CancelOrStopIntentHandler(AbstractRequestHandler):
             .response
         )
 
+
 class FallbackIntentHandler(AbstractRequestHandler):
     """Single handler for Fallback Intent."""
+
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         logger.debug("Checking can_handle FallbackIntentHandler")
@@ -219,6 +258,7 @@ class FallbackIntentHandler(AbstractRequestHandler):
         reprompt = "What was that?"
 
         return handler_input.response_builder.speak(speech).ask(reprompt).response
+
 
 class SessionEndedRequestHandler(AbstractRequestHandler):
     """Handler for Session End."""
@@ -300,6 +340,23 @@ class LocalizationInterceptor(AbstractRequestInterceptor):
         i18n = gettext.translation(
             'data', localedir='locales', languages=[locale], fallback=True)
         handler_input.attributes_manager.request_attributes["_"] = i18n.gettext
+
+
+def postMessage(action, led):
+    client = boto3.client('iot-data', region_name='eu-west-2')
+    client.publish(
+        topic='esp32/sub',
+        qos=0,
+        payload=json.dumps(
+            {
+                "message":
+                    {
+                        "action": action,
+                        "led": led
+                    }
+            }
+        )
+    )
 
 
 # The SkillBuilder object acts as the entry point for your skill, routing all request and response
