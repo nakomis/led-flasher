@@ -4,3 +4,4 @@ ignored
 .DS_Store
 lambda/dist
 lambda/lambda.zip
+*.drawio.bkp
