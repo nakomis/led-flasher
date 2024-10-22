@@ -60,7 +60,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder
             .speak(speak_output)
-            .ask(speak_output)
+            .ask(_(data.HELP_MSG))
             .response
         )
 
@@ -121,8 +121,7 @@ class OnIntentHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder
             .speak(speak_output)
-            # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask(speak_output)
+            .ask(_(data.REPROMPT_MSG))
             .response
         )
 
@@ -156,8 +155,7 @@ class OffIntentHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder
             .speak(speak_output)
-            # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask(speak_output)
+            .ask(_(data.REPROMPT_MSG))
             .response
         )
 
@@ -193,8 +191,7 @@ class FlashIntentHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder
             .speak(speak_output)
-            # .ask("add a reprompt if you want to keep the session open for the user to respond")
-            .ask(speak_output)
+            .ask(_(data.REPROMPT_MSG))
             .response
         )
 
@@ -349,11 +346,8 @@ def postMessage(action, led):
         qos=0,
         payload=json.dumps(
             {
-                "message":
-                    {
-                        "action": action,
-                        "led": led
-                    }
+                "action": action,
+                "led": led
             }
         )
     )
