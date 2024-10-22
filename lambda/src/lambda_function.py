@@ -99,7 +99,7 @@ class OnIntentHandler(AbstractRequestHandler):
 
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        logger.debug("Checking can_handle FlashIntent")
+        logger.debug("Checking can_handle OnIntent")
         logger.debug(handler_input)
         logger.debug(ask_utils.get_request_type(handler_input))
         return ask_utils.is_intent_name("OnIntent")(handler_input)
@@ -131,7 +131,7 @@ class OffIntentHandler(AbstractRequestHandler):
 
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        logger.debug("Checking can_handle FlashIntent")
+        logger.debug("Checking can_handle OffIntent")
         logger.debug(handler_input)
         logger.debug(ask_utils.get_request_type(handler_input))
 
@@ -174,7 +174,7 @@ class FlashIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         logger.debug("In FlashIntentHandler")
-        # logger.info(handler_input)
+        logger.debug("user:" + handler_input.request_envelope.session.user.user_id)
         slot_values = ask_utils.get_slot_value_v2(handler_input, "colour")
         colour = slot_values.value
         logger.info(("Flashing {}").format(colour))
