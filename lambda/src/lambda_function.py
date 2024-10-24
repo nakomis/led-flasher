@@ -9,6 +9,7 @@ import gettext
 import json
 import os
 import boto3
+import jwt
 from enum import Enum
 
 from ask_sdk_core.skill_builder import SkillBuilder
@@ -179,6 +180,13 @@ class FlashIntentHandler(AbstractRequestHandler):
         colour = slot_values.value
         logger.info(("Flashing {}").format(colour))
         logger.debug(colour)
+
+        token = ask_utils.get_account_linking_access_token(handler_input)
+        # TODO: Verify the token with Cognito
+        logger.debug("Token: " + token)
+        decodedToken = jwt.decode(token, algorithms=["RS256"])
+        logger.debug("Decoded token: " + decodedToken)
+
 
         led = Leds.fromString(colour)
         _ = handler_input.attributes_manager.request_attributes["_"]
