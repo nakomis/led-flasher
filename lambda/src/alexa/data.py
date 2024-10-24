@@ -1,6 +1,6 @@
 from gettext import gettext as _
 
-WELCOME_MESSAGE = _("I'm ready to light some lights")
+WELCOME_MESSAGE = _("Hello {}, I'm ready to light some lights")
 HELP_MSG = _("You can say Flash all, green on, blue off, etc.")
 FLASH_MSG = _("Flashing {}")
 TEST_MSG = _("Test intent")
