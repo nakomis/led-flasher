@@ -5,6 +5,7 @@
 #include "WiFi.h"
 #include <vector>
 #include <map>
+#include "Preferences.h"
 
 // The MQTT topics that this device should publish/subscribe
 #define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
@@ -28,6 +29,7 @@ const unsigned long MQTT_START_TIMEOUT_MILLIS = 20 * 1000;
 
 const int RED_VALUE = LOW;
 
+Preferences preferences;
 std::map<String, uint8_t> ledStates{{RED, 0}, {GREEN, 0}, {BLUE, 0}};
 
 // Uncomment the following line to target a local MQTT
@@ -51,16 +53,19 @@ int colourToLed(String colour) {
     }
 }
 
-void setPin(std::vector<String> leds, uint8_t value) {
+void setPin(std::vector<String> leds, uint8_t value, bool persist) {
     for (int i = 0; i < leds.size(); i++) {
+        if (persist) {
+            preferences.putUInt(leds[i].c_str(), value);
+        }
         int led = colourToLed(leds[i]);
         digitalWrite(led, led == LED_BUILTIN ? !value : value); // LED_BUILTIN is reversed for some reason...
         ledStates[leds[i]] = value;
     }
 }
 
-void togglePin(String led) {
-    setPin({led}, ledStates[led]);
+void togglePin(String led, bool persist) {
+    setPin({led}, ledStates[led], persist);
     ledStates[led] = !ledStates[led];
 }
 
@@ -69,21 +74,21 @@ void flash(std::vector<String> leds) {
     std::map<String, uint8_t> initialStates(ledStates);
 
     // Start with all target LEDs switched off
-    setPin(leds, LOW);
+    setPin(leds, LOW, false);
     delay(FLASH_DURATION);
 
     // Flash the LEDs
     for (int count = 0; count < FLASH_COUNT; count++) {
-        setPin(leds, HIGH);
+        setPin(leds, HIGH, false);
         delay(FLASH_DURATION);
-        setPin(leds, LOW);
+        setPin(leds, LOW, false);
         delay(FLASH_DURATION);
     }
 
     // Reset the LEDs to the initial states
-    setPin({RED}, initialStates[RED]);
-    setPin({GREEN}, initialStates[GREEN]);
-    setPin({BLUE}, initialStates[BLUE]);
+    setPin({RED}, initialStates[RED], false);
+    setPin({GREEN}, initialStates[GREEN], false);
+    setPin({BLUE}, initialStates[BLUE], false);
 }
 
 void sequence(int count = 1) {
@@ -91,23 +96,23 @@ void sequence(int count = 1) {
     std::map<String, uint8_t> initialStates(ledStates);
 
     // Start with all LEDs switched off
-    setPin({RED, GREEN, BLUE}, LOW);
+    setPin({RED, GREEN, BLUE}, LOW, false);
     delay(FLASH_DURATION);
 
     for (int i = 0; i < count; i++) {
         for (const String colour : {RED, GREEN, BLUE}) {
-            setPin({colour}, HIGH);
+            setPin({colour}, HIGH, false);
             delay(SEQUENCE_DURATION);
-            setPin({colour}, LOW);
+            setPin({colour}, LOW, false);
         }
     }
 
     delay(FLASH_DURATION);
 
     // Reset the LEDs to the initial states
-    setPin({RED}, initialStates[RED]);
-    setPin({GREEN}, initialStates[GREEN]);
-    setPin({BLUE}, initialStates[BLUE]);
+    setPin({RED}, initialStates[RED], false);
+    setPin({GREEN}, initialStates[GREEN], false);
+    setPin({BLUE}, initialStates[BLUE], false);
 }
 
 std::vector<String> splitStringToVector(String msg){
@@ -150,20 +155,20 @@ void messageHandler(String& topic, String& payload) {
 
     if (action.equals("ON")) {
         Serial.println("Oning");
-        setPin(leds, HIGH);
+        setPin(leds, HIGH, true);
     }
 
     if (action.equals("OFF")) {
         Serial.println("Offing");
-        setPin(leds, LOW);
+        setPin(leds, LOW, true);
     }
 
     Serial.println();
 }
 
 void connectAWS() {
-    setPin({RED, GREEN, BLUE}, LOW);
-    setPin({RED}, HIGH);
+    setPin({RED, GREEN, BLUE}, LOW, false);
+    setPin({RED}, HIGH, false);
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connecting to Wi-Fi.");
@@ -177,11 +182,11 @@ void connectAWS() {
             WiFi.disconnect();
             return;
         }
-        togglePin(GREEN);
+        togglePin(GREEN, false);
         delay(SEQUENCE_DURATION);
         Serial.print(".");
     }
-    setPin({RED, GREEN}, HIGH);
+    setPin({RED, GREEN}, HIGH, false);
     Serial.println("\nWi-Fi Connected.\n");
     client.setKeepAlive(31);
 
@@ -215,10 +220,10 @@ void connectAWS() {
             return;
         }
         Serial.print(".");
-        togglePin(BLUE);
+        togglePin(BLUE, false);
         delay(SEQUENCE_DURATION);
     }
-    setPin({RED, GREEN, BLUE}, HIGH);
+    setPin({RED, GREEN, BLUE}, HIGH, false);
     Serial.println("");
 
     if (!client.connected()) {
@@ -229,7 +234,7 @@ void connectAWS() {
     client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
     Serial.println("AWS IoT Connected.\n");
     delay(1000);
-    setPin({RED, GREEN, BLUE}, LOW);
+    setPin({RED, GREEN, BLUE}, LOW, false);
 }
 
 void publishMessage() {
@@ -244,12 +249,13 @@ void publishMessage() {
 // For main() see https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/main.cpp
 
 void setup() {
+    preferences.begin("led-flasher");
     const std::vector<int> pins = {LED_BUILTIN, LED_RED, LED_GREEN, LED_BLUE};
     for (int i = 0; i < pins.size(); i++) {
         int pin = pins[i];
         pinMode(pin, OUTPUT);
     }
-    setPin({RED, GREEN, BLUE}, LOW);
+    setPin({RED, GREEN, BLUE}, LOW, false);
     digitalWrite(LED_BUILTIN, LOW);
 
     Serial.begin(9600);
@@ -265,6 +271,9 @@ void setup() {
     Serial.println("=== Setup Complete ===");
     Serial.println("======================\n");
     sequence(3);
+    setPin({RED}, preferences.getUInt(RED.c_str()), false);
+    setPin({GREEN}, preferences.getUInt(GREEN.c_str()), false);
+    setPin({BLUE}, preferences.getUInt(BLUE.c_str()), false);
 }
 
 void loop() {
