@@ -1,2 +1,4 @@
 ask-sdk-core
 boto3
+pyjwt
+cryptography
