@@ -12,3 +12,9 @@ https://developer.amazon.com/alexa/console/ask
 * Copy function ARN
 * In Alexa console, select the skill, then "Custom" -> "Endpoint" in LHS
 * Copy the skill ID, then back in the lambda function add a 'Trigger', select Alexa and add the skill ID
+
+
+Setting up cognito user pool for authentication (i.e. private skill):
+
+https://aws.amazon.com/blogs/compute/amazon-cognito-for-alexa-skills-user-management/
+
