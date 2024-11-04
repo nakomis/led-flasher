@@ -4,7 +4,7 @@
 ![Architecture](architecture/led-flasher%20architecture.drawio.svg)
 
 Eventually this will all be [CDK/ASK](https://aws.amazon.com/blogs/devops/deploying-alexa-skills-with-aws-cdk/) but for now I simply created
-the skill and lambda function in their respective web consoles.
+the skill, lambda function, and IoT devices in their respective web consoles.
 
 ## PCB
 ![PCB](pcb/pcb.svg)
