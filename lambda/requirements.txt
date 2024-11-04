@@ -1,2 +1,4 @@
 ask-sdk-core
 boto3
+pyjwt
+python-jose==3.2.0

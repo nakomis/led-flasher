@@ -9,6 +9,8 @@ import gettext
 import json
 import os
 import boto3
+from jose import jwk, jwt
+from jose.utils import base64url_decode
 from enum import Enum
 
 from ask_sdk_core.skill_builder import SkillBuilder
@@ -55,7 +57,26 @@ class LaunchRequestHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         _ = handler_input.attributes_manager.request_attributes["_"]
         logger.debug("In Launch Request")
-        speak_output = _(data.WELCOME_MESSAGE)
+
+        token = ask_utils.get_account_linking_access_token(handler_input)
+
+        # TODO: Verify the token with Cognito
+        # TODO: See https://github.com/aws-samples/amazon-cognito-api-gateway/blob/main/custom-auth/lambda.py
+
+        logger.debug("Token: " + token)
+        # logger.debug(jwt.decode(token))
+        message = str(token).rsplit('.')[1]
+        logger.debug(message)
+        logger.debug("Message ^^")
+        decodedMessage = base64url_decode(message.encode()).decode('utf-8')
+        logger.debug(decodedMessage)
+        logger.debug("Decoded ^^")
+        payload = json.loads(decodedMessage)
+        username = payload["username"]
+        logger.debug(username)
+        logger.debug("Username ^^")
+
+        speak_output = _(data.WELCOME_MESSAGE.format(username))
 
         return (
             handler_input.response_builder
@@ -179,6 +200,23 @@ class FlashIntentHandler(AbstractRequestHandler):
         colour = slot_values.value
         logger.info(("Flashing {}").format(colour))
         logger.debug(colour)
+
+        token = ask_utils.get_account_linking_access_token(handler_input)
+
+        # TODO: Verify the token with Cognito
+        # TODO: See https://github.com/aws-samples/amazon-cognito-api-gateway/blob/main/custom-auth/lambda.py
+
+        logger.debug("Token: " + token)
+        # logger.debug(jwt.decode(token))
+        message = str(token).rsplit('.')[1]
+        logger.debug(message)
+        logger.debug("Message ^^")
+        decodedMessage = base64url_decode(message.encode()).decode('utf-8')
+        logger.debug(decodedMessage)
+        logger.debug("Decoded ^^")
+        payload = json.loads(decodedMessage)
+        logger.debug(payload["username"])
+        logger.debug("Username ^^")
 
         led = Leds.fromString(colour)
         _ = handler_input.attributes_manager.request_attributes["_"]
