@@ -68,7 +68,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         message = str(token).rsplit('.')[1]
         logger.debug(message)
         logger.debug("Message ^^")
-        decodedMessage = base64url_decode(message).decode('utf-8')
+        decodedMessage = base64url_decode(message.encode()).decode('utf-8')
         logger.debug(decodedMessage)
         logger.debug("Decoded ^^")
         payload = json.loads(decodedMessage)
@@ -211,7 +211,7 @@ class FlashIntentHandler(AbstractRequestHandler):
         message = str(token).rsplit('.')[1]
         logger.debug(message)
         logger.debug("Message ^^")
-        decodedMessage = base64url_decode(message).decode('utf-8')
+        decodedMessage = base64url_decode(message.encode()).decode('utf-8')
         logger.debug(decodedMessage)
         logger.debug("Decoded ^^")
         payload = json.loads(decodedMessage)
