@@ -1,5 +1,13 @@
 # led-flasher
 
+Alexa skill that flashes LEDs connected to an ESP32 via AWS IoT, triggered by voice commands.
+
+## Support
+
+If you find this useful, please consider buying me a coffee:
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_GB/i/btn/btn_donate_SM.gif)](https://www.paypal.com/donate?hosted_button_id=Q3BESC73EWVNN)
+
 ## Architecture Diagram
 ![Architecture](architecture/led-flasher%20architecture.drawio.svg)
 
